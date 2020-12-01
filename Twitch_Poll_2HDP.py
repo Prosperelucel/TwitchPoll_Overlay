@@ -1,4 +1,3 @@
-from bs4 import BeautifulSoup
 from selenium import webdriver
 import threading
 import time
@@ -88,13 +87,17 @@ def Parse_Info():
 def Check_Poll():
     global current_state
     global thread_stop
+    global scan_active
     try:
-        finish = driver.find_element_by_xpath("//div[contains(@id,\"root\")]")
-        if finish.get_attribute("data-a-page-loaded-name") == "RootPollPage":
-            print("Title = No Content")
-            current_state = "Poll Finished"
+        finish = driver.find_element_by_xpath("//p[contains(@data-test-selector,\"header\")]")
+        if finish.text == "Sondage terminé":
+            print("Sondage terminé")
+            scan_active = False
+            current_state = "Sondage terminé"
     except:
-        return
+        current_state = "Waiting..."
+        scan_active = True
+
 
 def Scan_Loop(url):
     global scan_active
@@ -106,15 +109,15 @@ def Scan_Loop(url):
     while True:
         time.sleep(1)
         try:
+            Check_Poll()
             if scan_active:
                 current_state = "Scanning..."
-                #Check_Poll()
                 infos = Parse_Info()
                 print("Infos : ",infos)
                 if infos:
                     to_vMix(infos)
                 else:
-                    current_state = "Poll Finished"
+                    current_state = "Aucun sondage en cours..."
             if thread_stop:
                 current_state = "Stopped"
                 break
@@ -125,16 +128,18 @@ def GUI():
     global thread_stop
     global current_state
     sg.theme('DarkBrown1')
+    image_to_center = [[sg.Image(filename="logo2hdp.png")]]
+    #[sg.Column(image_to_center, vertical_alignment='center', justification='center', k='-C-')],
     layout = [
                  [sg.Frame('Status :', layout=[
                      [
-                         sg.T(current_state, key='_STATE_',size=(38, 1))
-                     ]])],
+                         sg.T(current_state, key='_STATE_',size=(18, 1))
+                     ]]),sg.Image(filename="logo2hdp.png")],
                 [sg.Text('Poll URL :')],
                 [sg.Input(key='_URL_POLL_')],
                 [sg.Button('Start',key='_START_'),
                 sg.Button('Stop', key='_STOP_',disabled=True),
-                sg.Exit()]
+                sg.Exit()],
             ]
 
 
