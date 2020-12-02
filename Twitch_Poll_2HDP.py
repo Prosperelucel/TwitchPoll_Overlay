@@ -4,6 +4,7 @@ import time
 import PySimpleGUI as sg
 import requests
 
+poll_finish = False
 thread_stop = False
 current_state = "Waiting..."
 
@@ -18,13 +19,6 @@ def WebController(url):
     global thread_stop
     try:
         options = webdriver.ChromeOptions()
-        options.add_argument('--disable-backgrounding-occluded-windows')
-        options.add_argument('--disable-background-timer-throttling')
-        options.add_argument('--mute-audio')
-        options.add_argument('--disable-gpu')
-        options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        options.add_experimental_option('useAutomationExtension', False)
-        options.add_argument("--disable-blink-features=AutomationControlled")
         options.add_argument('--headless')
         driver = webdriver.Chrome('C:\Program Files (x86)\Google\Chrome\Application\chromedriver.exe', options=options)
         driver.get(url)
@@ -36,27 +30,34 @@ def WebController(url):
 def to_vMix(info_list):
     requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=0&Value="+str(info_list[0]))
 
+    requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=1&Value="+str(info_list[1]))
     requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=2&Value="+str(info_list[1]))
-    requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=1&Value="+str(info_list[2]))
+    requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=3&Value="+str(info_list[2]))
 
     requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=4&Value="+str(info_list[3]))
-    requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=3&Value="+str(info_list[4]))
+    requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=5&Value="+str(info_list[3]))
+    requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=6&Value="+str(info_list[4]))
 
-    requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=6&Value="+str(info_list[5]))
-    requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=5&Value="+str(info_list[6]))
+    requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=7&Value="+str(info_list[5]))
+    requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=8&Value="+str(info_list[5]))
+    requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=9&Value="+str(info_list[6]))
 
-    requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=8&Value="+str(info_list[7]))
-    requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=7&Value="+str(info_list[8]))
+    requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=10&Value="+str(info_list[7]))
+    requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=11&Value="+str(info_list[7]))
+    requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=12&Value="+str(info_list[8]))
 
-    requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=9&Value="+str(info_list[9])+str(" VOTES"))
+    requests.post("http://localhost:8088/api/?Function=SetText&Input=sondage&SelectedIndex=13&Value="+str(info_list[9])+str(" VOTES"))
 
 
 
 def Parse_Info():
     global answer_list,scores_list,current_state,thread_stop
+    global current_score
     answer_list = []
     scores_list = []
+    current_score = []
     votes = []
+    print("Parsing info...")
     try:
         ##Get Title
         title = driver.find_elements_by_xpath("//p[contains(@class,\"tw-c-text-overlay tw-font-size-4 tw-line-height-heading tw-strong tw-word-break-word\")]")
@@ -79,21 +80,66 @@ def Parse_Info():
             votes.append(int(vote))
         total_votes = sum(votes)
 
+        current_score = [int(scores_list[0]),int(scores_list[1]),int(scores_list[2]),int(scores_list[3])]
+        print("Title: ", title_txt)
+        print("Answer_List: ", answer_list)
+        print("Scores_list: ", scores_list)
+
         return (title_txt,answer_list[0],scores_list[0],answer_list[1],scores_list[1],answer_list[2],scores_list[2],answer_list[3],scores_list[3],total_votes)
     except:
         current_state = "Parsing error..."
+        print("Parsing error...")
         return
+
+def Ranking(current_score):
+    print ("Current_Score: ",current_score)
+    print ("Sum: ", sum(current_score))
+    if sum(current_score) != 0:
+        max_value = max(current_score)
+        max_index = current_score.index(max_value)
+        if max_index == 0:
+            a1_lead = True
+            a2_lead = False
+            a3_lead = False
+            a4_lead = False
+        if max_index == 1:
+            a1_lead = False
+            a2_lead = True
+            a3_lead = False
+            a4_lead = False
+        if max_index == 2:
+            a1_lead = False
+            a2_lead = False
+            a3_lead = True
+            a4_lead = False
+        if max_index == 3:
+            a1_lead = False
+            a2_lead = False
+            a3_lead = False
+            a4_lead = True
+        if a1_lead:
+            requests.post("http://localhost:8088/api/?Function=TitleBeginAnimation&Input=sondage&Value=Page2")
+        if a2_lead:
+            requests.post("http://localhost:8088/api/?Function=TitleBeginAnimation&Input=sondage&Value=Page3")
+        if a3_lead:
+            requests.post("http://localhost:8088/api/?Function=TitleBeginAnimation&Input=sondage&Value=Page4")
+        if a4_lead:
+            requests.post("http://localhost:8088/api/?Function=TitleBeginAnimation&Input=sondage&Value=Page5")
 
 def Check_Poll():
     global current_state
     global thread_stop
     global scan_active
+    global poll_finish
     try:
         finish = driver.find_element_by_xpath("//p[contains(@data-test-selector,\"header\")]")
         if finish.text == "Sondage terminé":
             print("Sondage terminé")
             scan_active = False
             current_state = "Sondage terminé"
+            if not poll_finish:
+                Ranking(current_score)
+                poll_finish = True
     except:
         current_state = "Waiting..."
         scan_active = True
@@ -103,6 +149,7 @@ def Scan_Loop(url):
     global scan_active
     global current_state
     global thread_stop
+    global poll_finish
     current_state = "Loading URL..."
     WebController(url)
     print("Scanning URL : ", url)
@@ -118,6 +165,8 @@ def Scan_Loop(url):
                     to_vMix(infos)
                 else:
                     current_state = "Aucun sondage en cours..."
+                    poll_finish = False
+
             if thread_stop:
                 current_state = "Stopped"
                 break
