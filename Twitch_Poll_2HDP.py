@@ -184,8 +184,7 @@ def GUI():
                      [
                          sg.T(current_state, key='_STATE_',size=(18, 1))
                      ]]),sg.Image(filename="logo2hdp.png")],
-                [sg.Text('Poll URL :')],
-                [sg.Input(key='_URL_POLL_')],
+                [sg.Input(key='_URL_POLL_',default_text="https://www.twitch.tv/popout/2hdp/poll")],
                 [sg.Button('Start',key='_START_'),
                 sg.Button('Stop', key='_STOP_',disabled=True),
                 sg.Exit()],
