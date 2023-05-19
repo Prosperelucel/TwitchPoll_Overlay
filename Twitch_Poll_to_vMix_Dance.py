@@ -1,4 +1,3 @@
-
 import undetected_chromedriver as uc
 import threading
 import time
@@ -6,6 +5,7 @@ import PySimpleGUI as sg
 import requests
 import json
 import os
+# import subprocess
 path = os.getcwd()
 
 print(path)
@@ -29,6 +29,9 @@ def WebController(url):
     try:
         options = uc.ChromeOptions()
         options.add_argument('--headless')
+        options.add_argument('--window-size=576,576')
+        options.add_argument("force-device-scale-factor=0.85");
+        options.add_argument("high-dpi-support=0.85");
         driver = uc.Chrome(options=options)
         #driver = uc.Chrome('C:\Program Files (x86)\Google\Chrome\Application\chromedriver.exe', options=options)
         driver.get("https://www.twitch.tv/popout/"+str(poll)+"/poll")
@@ -39,9 +42,9 @@ def WebController(url):
 
 def to_vMix(info_list):
 
-    idx_vote = "0"
-    idx_score1 = "2"
-    idx_score2 = "1"
+    idx_vote = "2"
+    idx_score1 = "1"
+    idx_score2 = "0"
     idx_name1 = "5"
     idx_name2 = "6"
 
@@ -65,6 +68,7 @@ def to_vMix(info_list):
 
 
 def Parse_Info():
+    global cookie
     global answer_list,scores_list,current_state,thread_stop
     global current_score
     answer_list = []
@@ -72,11 +76,21 @@ def Parse_Info():
     current_score = []
     votes = []
     print("Parsing info...")
+
     try:
+        if cookie:
+            cookies = driver.find_element_by_xpath("//div[contains(@class,\"consent-banner\")]")
+            driver.execute_script("arguments[0].remove();", cookies)
+            # cookies.click()
+            cookie = False
         ##Get all the text field
-        data_list = driver.find_elements_by_xpath("//p[contains(@class,\"sc-AxirZ\") and not(@class=\"sc-AxirZ ktnnZK\") and not(@class=\"sc-AxirZ epwTZM\") and not(@class=\"sc-AxjAm StDqN\")]")
-        state = data_list[0].text
-        title_txt = data_list[1].text
+        #data_list = driver.find_elements_by_xpath("//p[contains(@class,\"CoreText-sc-cpl358-0\") and not(@class=\"sc-AxirZ ktnnZK\") and not(@class=\"sc-AxirZ epwTZM\") and not(@class=\"sc-AxjAm StDqN\")]")
+        # data_list = driver.find_elements_by_xpath("//p[contains(@class,\"CoreText-sc-1txzju1-0\")]")
+        data_list = driver.find_elements_by_xpath("//p[contains(@class,\"CoreText\")]")
+        for x in data_list:
+            print(x.text)
+        state = data_list[2].text
+        title_txt = data_list[3].text
         ##Get Answer
         answers = driver.find_elements_by_xpath("//p[contains(@data-test-selector,\"title\")]")
         for txt in answers:
@@ -154,12 +168,15 @@ def Check_Poll():
             if not poll_finish:
                 #Ranking(current_score)
                 poll_finish = True
+        else:
+            scan_active = True
     except:
         current_state = "Waiting..."
         scan_active = True
 
 
 def Scan_Loop(poll):
+    global cookie
     global scan_active
     global current_state
     global thread_stop
@@ -167,12 +184,13 @@ def Scan_Loop(poll):
     current_state = "Loading URL..."
     WebController(poll)
     print("Scanning URL : ", poll)
+    cookie = True
     while True:
         time.sleep(0.25)
         try:
             Check_Poll()
             if scan_active:
-                current_state = "Scanning..."
+                current_state = "Sondage en cours..."
                 infos = Parse_Info()
                 print("Infos : ",infos)
                 if infos:
@@ -189,10 +207,10 @@ def Scan_Loop(poll):
 
 
 if __name__ == "__main__":
-    poll = "3hitcombo"
+    poll = "Prospere"
     vmix_ip = "127.0.0.1"
     vmix_port = "8088"
-    vmix_input = "Sondage_Dance"
+    vmix_input = "Sondage_Dance.gtzip"
 
     sg.theme('DarkBrown1')
     #[sg.Column(image_to_center, vertical_alignment='center', justification='center', k='-C-')],
